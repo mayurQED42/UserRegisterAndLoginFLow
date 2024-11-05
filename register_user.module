@@ -1,0 +1,89 @@
+<?php
+
+/**
+ * @file
+ * This is the module to alter DHI User.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
+use Drupal\user\Entity\User;
+
+ /**
+  * Form alter for user register form.
+  */
+  function register_user_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+    if ($form_id == "user_register_form") {
+      $form['account']['mail']['#states'] = [
+        'visible' => [
+          ':input[name="registration_type"]' => ['value' => 'email'],
+        ],
+      ];
+      $form['actions']['submit']['#states'] = [
+        'visible' => [
+          ':input[name="registration_type"]' => ['value' => 'email'],
+        ],
+      ];
+      // Add a new submit button create new account using mobile.
+      $form['actions']['create_account_using_mobile'] = [
+        '#type' => 'submit',
+        '#value' => t('Create new account'),
+        '#submit' => ['register_user_mobile_number_submit'],
+        '#name' => 'mobile-otp-button',
+        '#states' => [
+          'visible' => [
+            ':input[name="registration_type"]' => ['value' => 'mobile_number'],
+          ],
+        ],
+      ];
+    }
+  }
+
+  /**
+   * Custom submit for user register with mobile.
+   */
+  function register_user_mobile_number_submit(array &$form, FormStateInterface $form_state) {
+    $mobile = $form_state->getValue('field_mobile_number');
+    if ($mobile) {
+      $mobile_number = $mobile[0]['value'];
+      $otp = register_user_generate_login_otp();
+      // Send otp and verify in the redirected url.
+      $twilio = \Drupal::service('twilio.sms');
+      $message = "Your login code is: " . $otp . " Don't share this code with anyone;";
+      $mobile = '+1' . $mobile_number;
+      $sid = $twilio->messageSend($mobile, $message);
+      if ($sid == 'not send') {
+        \Drupal::messenger()->addError(t('Failed to send SMS.'));
+      }
+      else {
+        // Create a new user.
+        $user = User::create();
+        $current_ts = strtotime('now');
+        // Set the required fields for the new user.
+        // Use mobile number as username.
+        $user->setUsername($mobile_number);
+        // Set the mobile number for email field initially.
+        $user->set("init", $mobile_number);
+        $user->set("field_mobile_number", $mobile_number);
+        $user->set('field_otp_verify', $otp);
+        $user->set('field_otp_generate_timestamp', $current_ts);
+        // Save the user.
+        $user->save();
+        // Temporary store mobile number to render on otp verify page.
+        $temp_store_factory = \Drupal::service('tempstore.private');
+        $temp_store = $temp_store_factory->get('register_user');
+        $temp_store->set('mobile_number', $mobile_number);
+        // Redirect to an otp verify form.
+        $form_state->setRedirect('register_user.user_otp_verify_form');
+      }
+    }
+  }
+
+  /**
+  * Function to generate 6 digit random OTP for user varification.
+  */
+  function register_user_generate_login_otp() {
+    return str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+  }
+ 
