@@ -2,7 +2,7 @@
 
 /**
  * @file
- * This is the module to alter DHI User.
+ * This is the module to alter User.
  */
 
 use Drupal\Core\Form\FormStateInterface;
