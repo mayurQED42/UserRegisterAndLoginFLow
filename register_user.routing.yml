@@ -1,0 +1,9 @@
+register_user.user_login_otp_verify_form:
+  path: '/user/login/otp-verify'
+  defaults:
+    _form: '\Drupal\register_user\Form\UserOtpVerifyForm'
+    _title: 'Log in otp verify'
+  requirements:
+    _custom_access: '\Drupal\register_user\Access\AnonymousAccessCheck::access'
+  options:
+    no_cache: TRUE

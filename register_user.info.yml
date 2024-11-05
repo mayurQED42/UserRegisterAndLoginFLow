@@ -1,0 +1,5 @@
+name: 'Register User'
+type: module
+description: 'Utilities related to User management.'
+core_version_requirement: ^10
+package: Custom
