@@ -7,3 +7,13 @@ register_user.user_login_otp_verify_form:
     _custom_access: '\Drupal\register_user\Access\AnonymousAccessCheck::access'
   options:
     no_cache: TRUE
+
+register_user.otp_login_form:
+  path: '/user/login/otp'
+  defaults:
+    _form: '\Drupal\register_user\Form\OtpLoginForm'
+    _title: 'Log in'
+  requirements:
+    _custom_access: '\Drupal\register_user\Access\AnonymousAccessCheck::access'
+  options:
+    no_cache: TRUE
